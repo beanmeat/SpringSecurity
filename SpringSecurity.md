@@ -87,9 +87,11 @@ public class DefaultSecurityConfig {
 
 ## Architecture
 
+链接：https://docs.spring.io/spring-security/reference/servlet/architecture.html
+
 讨论基于 Servlet 的应用程序中 Spring Security 的高级体系结构。我们将在参考文献的身份验证、授权和防止利用部分中构建这种高层次的理解。
 
-**A Review of Filters**
+### **A Review of Filters**
 
 Spring Security’s Servlet support is based on Servlet Filters, so it is helpful to look at the role of Filters generally first. The following image shows the typical layering of the handlers for a single HTTP request.
 
@@ -111,3 +113,101 @@ public void doFilter(ServletRequest request, ServletResponse response, FilterCha
 ```
 
 由于 Filter 只影响下游 Filter 实例和 Servlet，因此调用每个 Filter 的顺序非常重要。
+
+### DelegatingFilterProxy
+
+Spring提供了一个名为`DelegatingFilterProxy`的Filter的实现，它在Servlet容器的声明周期和Spring的ApplicationContext之间建立桥梁。Servlet容器允许使用自己的标准注册Filter实例，但他不知道Spring定义的Bean信息，您可以通过标准的 Servlet 容器机制注册 DelegatingFilterProxy，但是将所有工作委托给实现 Filter 的 Spring Bean。
+
+![image-20250418101351498](images/image-20250418101351498.png)
+
+DelegatingFilterProxy 从 ApplicationContext 中查找 Bean Filter0, 然后调用 Bean Filter0。以下代码清单显示了 DeleatingFilterProxy 的伪代码：
+
+```java
+public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) {
+	Filter delegate = getFilterBean(someBeanName);
+	delegate.doFilter(request, response);
+}
+```
+
+- 懒加载获取注册为SpringBean的Filter。因为代理中是BeanFilter的一个实例
+- 将工作委托给Spring Bean
+
+DelegatingFilterProxy的另一个好处就是允许延迟查找Filter Bean实例。这点很重要，因为容器在启动之前需要注册Filter实例。然而Spring通常使用ContextLoaderListener来加载SpringBeans，这一操作只要在Filter实例需要注册之后才会完成。
+
+### **FilterChainProxy**
+
+Spring Security 的 Servlet 支持包含在 FilterChainProxy 中。FilterChainProxy 是 Spring Security 提供的一个特殊 Filter, 允许通过 SecurityFilterChain 委托给多个 Filter 实例。由于 FilterChainProxy 是一个 Bean, 它通常被包装在 DeleatingFilterProxy 中。
+
+![image-20250418095813549](images/image-20250418095813549.png)
+
+### **SecurityFilterChain**
+
+[`SecurityFilterChain`](https://docs.spring.io/spring-security/reference/api/java/org/springframework/security/web/SecurityFilterChain.html) is used by [FilterChainProxy](https://docs.spring.io/spring-security/reference/servlet/architecture.html#servlet-filterchainproxy) to determine which Spring Security `Filter` instances should be invoked for the current request.
+
+![image-20250418100218952](images/image-20250418100218952.png)
+
+
+
+![image-20250418102537539](images/image-20250418102537539.png)
+
+### Security Filters
+
+## Authentication
+
+### Username/Password Authentication
+
+链接：https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/index.html
+
+**配置类方式**
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.authorizeHttpRequests((authorize) -> authorize
+				.anyRequest().authenticated()
+			)
+			.httpBasic(Customizer.withDefaults())
+			.formLogin(Customizer.withDefaults());
+
+		return http.build();
+	}
+
+	@Bean
+	public UserDetailsService userDetailsService() {
+		UserDetails userDetails = User.withDefaultPasswordEncoder()
+			.username("user")
+			.password("password")
+			.roles("USER")
+			.build();
+
+		return new InMemoryUserDetailsManager(userDetails);
+	}
+
+}
+```
+
+**yml方式**
+
+```yaml
+spring:
+  security:
+    user:
+      name: root
+      password: root
+```
+
+To learn more about username/password authentication, consider the following use cases:
+
+- I want to [learn how Form Login works](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/form.html)
+- I want to [learn how HTTP Basic authentication works](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/basic.html)
+- I want to [learn how `DaoAuthenticationProvider` works](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/dao-authentication-provider.html)
+- I want to [manage users in memory](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/in-memory.html)
+- I want to [manage users in a database](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/jdbc.html)
+- I want to [manage users in LDAP](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/ldap.html#servlet-authentication-ldap-authentication)
+- I want to [publish an `AuthenticationManager` bean](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/index.html#publish-authentication-manager-bean) for custom authentication
+- I want to [customize the global `AuthenticationManager`](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/index.html#customize-global-authentication-manager)
