@@ -211,3 +211,88 @@ To learn more about username/password authentication, consider the following use
 - I want to [manage users in LDAP](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/ldap.html#servlet-authentication-ldap-authentication)
 - I want to [publish an `AuthenticationManager` bean](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/index.html#publish-authentication-manager-bean) for custom authentication
 - I want to [customize the global `AuthenticationManager`](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/index.html#customize-global-authentication-manager)
+
+### 数据库登录流程分析
+
+1. 访问http://localhost:8080/...
+
+2. 被spring security的filter过滤器拦截（里面有15个Filter）
+
+3. 由于没有登录过，所以spring security就跳转到登录页面（框架生成的）
+
+4. 我们在登录页输出账号和密码去登录提交；（账号和密码是数据库的账号密码）
+
+5. spring security里面的UsernamePasswordAuthenticationFilter接收账号和密码
+
+   ```java
+   public class UsernamePasswordAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+       // ....
+       @Override
+   	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+   			throws AuthenticationException {
+   		if (this.postOnly && !request.getMethod().equals("POST")) {
+   			throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
+   		}
+   		String username = obtainUsername(request);
+   		username = (username != null) ? username.trim() : "";
+   		String password = obtainPassword(request);
+   		password = (password != null) ? password : "";
+   		UsernamePasswordAuthenticationToken authRequest = UsernamePasswordAuthenticationToken.unauthenticated(username,
+   				password);
+   		// Allow subclasses to set the "details" property
+   		setDetails(request, authRequest);
+   		return this.getAuthenticationManager().authenticate(authRequest);
+   	}
+       // ....
+   }
+   ```
+
+   6. UsernamePasswordAuthenticationFilter的过滤器会调用loadUserByUsername(String username)方法去数据库查询用户
+
+   7. 从数据库查询用户后，把用户组装成UserDetail对象，然后返回给SpringSecurity框架
+
+   8. 接收到user对象后会经过Filter里面进行用户状态的判断，用户对象中默认有4个状态字段，如果这4个状态字段的值都为true，该用户才能登录，否则就是提示用户状态不正常（框架中实际上只判断3个状态值，那个密码是否过期没有做判断）
+
+      ```java
+      this.preAuthenticationChecks.check(user);
+      ```
+
+      ```java
+      private class DefaultPreAuthenticationChecks implements UserDetailsChecker {
+              private DefaultPreAuthenticationChecks() {
+              }
+      
+              public void check(UserDetails user) {
+                  if (!user.isAccountNonLocked()) {
+                      AbstractUserDetailsAuthenticationProvider.this.logger.debug("Failed to authenticate ...");
+                      throw new LockedException(AbstractUserDetailsAuthenticationProvider.this.messages.getMessage("AbstractUserDetailsA..."));
+                  } else if (!user.isEnabled()) {
+                      AbstractUserDetailsAuthenticationProvider.this.logger.debug("Failed to authenticate ...");
+                      throw new DisabledException(AbstractUserDetailsAuthenticationProvider.this.messages.getMessage("AbstractUserDetails...));
+                  } else if (!user.isAccountNonExpired()) {
+                      AbstractUserDetailsAuthenticationProvider.this.logger.debug("Failed to authenticate since ...");
+                      throw new AccountExpiredException(AbstractUserDetailsAuthenticationProvider.this.messages.getMessage("AbstractUserDetailsA..."));
+                  }
+              }
+          }
+      ```
+
+   9. 密码比较
+
+      ```java
+      protected void additionalAuthenticationChecks(UserDetails userDetails, UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
+          if (authentication.getCredentials() == null) {
+              this.logger.debug("Failed to authenticate since no credentials provided");
+              throw new BadCredentialsException(this.messages.getMessage("AbstractUserDetailsAuthentication..."));
+          } else {
+              String presentedPassword = authentication.getCredentials().toString();
+              if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
+                  this.logger.debug("Failed to authenticate since password does not match stored value");
+                  throw new BadCredentialsException(this.messages.getMessage("AbstractUserDetailsAuthentication..."));
+              }
+          }
+      }
+      ```
+
+      
+
