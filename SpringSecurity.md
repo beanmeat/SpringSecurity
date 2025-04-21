@@ -374,3 +374,25 @@ class LoginController {
 }
 ```
 
+### PasswordEncoder
+
+SpringSecurity 的 servlet 支持包括通过集成 PasswordEncoder 来安全地存储密码。您可以通过公开 PasswordEncoderBean 来自定义 Spring Security 使用的 PasswordEncoder 实现。
+
+authentication-password-storage-configuration：https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html#authentication-password-storage-configuration
+
+- **BCryptPasswordEncoder**
+- DelegatingPasswordEncoder
+- LdapShaPasswordEncoder
+- ...
+
+```java
+@Test
+void contextLoads() {
+    String password = "aaa111";
+    String encodePassword = passwordEncoder.encode(password);// 加密方法
+
+    boolean matches = passwordEncoder.matches(password, encodePassword);// 密码匹配
+    System.out.println(matches);
+}
+```
+
