@@ -294,5 +294,83 @@ To learn more about username/password authentication, consider the following use
       }
       ```
 
-      
+### Reading the Username & Password
+
+链接：https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/input.html
+
+Spring Security provides the following built-in mechanisms for reading a username and password from `HttpServletRequest`:
+
+- Form
+- Basic
+- Digest
+
+#### Form Login
+
+链接：https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/form.html
+
+```java
+public SecurityFilterChain filterChain(HttpSecurity http) {
+	http
+		.formLogin(form -> form
+			.loginPage("/login")
+			.permitAll()
+		);
+	// ...
+}
+```
+
+*Login Form - src/main/resources/templates/login.html*
+
+```java
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+	<head>
+		<title>Please Log In</title>
+	</head>
+	<body>
+		<h1>Please Log In</h1>
+		<div th:if="${param.error}">
+			Invalid username and password.</div>
+		<div th:if="${param.logout}">
+			You have been logged out.</div>
+		<form th:action="@{/login}" method="post">
+			<div>
+			<input type="text" name="username" placeholder="Username"/>
+			</div>
+			<div>
+			<input type="password" name="password" placeholder="Password"/>
+			</div>
+			<input type="submit" value="Log in" />
+		</form>
+	</body>
+</html>
+```
+
+There are a few key points about the default HTML form:
+
+- The form should perform a `post` to `/login`.
+- The form needs to include a [CSRF Token](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html#servlet-csrf), which is [automatically included](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html#csrf-integration-form) by Thymeleaf.
+- The form should specify the username in a parameter named `username`.
+- The form should specify the password in a parameter named `password`.
+- If the HTTP parameter named `error` is found, it indicates the user failed to provide a valid username or password.
+- If the HTTP parameter named `logout` is found, it indicates the user has logged out successfully.
+
+Many users do not need much more than to customize the login page. However, if needed, you can customize everything shown earlier with additional configuration.
+
+If you use Spring MVC, you need a controller that maps `GET /login` to the login template we created. The following example shows a minimal `LoginController`:
+
+LoginController
+
+- Java
+- Kotlin
+
+```java
+@Controller
+class LoginController {
+	@GetMapping("/login")
+	String login() {
+		return "login";
+	}
+}
+```
 
