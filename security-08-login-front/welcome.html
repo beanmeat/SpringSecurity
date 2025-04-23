@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="./js/axios.js"></script>
+    <title>欢迎使用</title>
+</head>
+<body>
+欢迎使用...  <br/>
+<a href="javascript:logout()">退出登录</a> <br/>
+<a href="javascript:getUserInfo()">获取用户信息</a>
+</body>
+
+<script type="text/javascript">
+    function getUserInfo() {
+        axios.get('http://localhost:8080/welcome').then(function (response) {
+            // 处理成功情况
+            console.log(response);
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+    }
+
+    function logout() {
+        axios.get('http://localhost:8080/user/logout').then(function (response) {
+            // 处理成功情况
+            console.log(response);
+        })
+            .catch(function (error) {
+                // 处理错误情况
+                console.log(error);
+            })
+            .finally(function () {
+                // 总是会执行
+            });
+    }
+</script>
+</html>

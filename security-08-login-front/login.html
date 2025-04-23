@@ -6,14 +6,31 @@
     <title>登录</title>
 </head>
 <body>
-<form action="http://localhost:8080/user/login" method="post">
-    账号：<input type="text" name="username"> <br/>
-    密码：<input type="password" name="password"> <br/>
-    <input type="submit" value="登 录">
+<form>
+    账号：<input type="text" id="username" name="username"> <br/>
+    密码：<input type="password" id="password" name="password"> <br/>
+    <input type="button" value="登 录" onclick="login()">
 </form>
 </body>
 
-<script>
+<script type="text/javascript">
+    function login() {
+        let username = document.getElementById('username').value;
+        let password = document.getElementById('password').value;
 
+        let formData = new FormData();
+        formData.append("username",username);
+        formData.append("password",password);
+        axios.post('http://localhost:8080/user/login',formData).then(function (response) {
+            console.log(response);
+            if(response.data.code === 200){
+                window.location.href = "welcome.html";
+            }else{
+                alert(response.data.msg)
+            }
+        }).catch(function (error) {
+            console.log(error);
+        });
+    }
 </script>
 </html>

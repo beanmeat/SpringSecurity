@@ -75,6 +75,11 @@
 			<artifactId>hutool-captcha</artifactId>
 			<version>5.8.32</version>
 		</dependency>
+		<dependency>
+			<groupId>cn.hutool</groupId>
+			<artifactId>hutool-json</artifactId>
+			<version>5.8.24</version>
+		</dependency>
 	</dependencies>
 
 
