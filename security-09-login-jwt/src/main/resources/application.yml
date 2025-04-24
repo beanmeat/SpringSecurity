@@ -4,10 +4,15 @@ spring:
     password: root
     url: jdbc:mysql://localhost:3306/security
     driver-class-name: com.mysql.cj.jdbc.Driver
-  # jackson??json?????????????????
+  # jackson进行json转换时使用指定的时区和格式进行转换
   jackson:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 10
 mybatis:
   configuration:
     map-underscore-to-camel-case: true

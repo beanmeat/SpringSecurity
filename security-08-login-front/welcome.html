@@ -9,20 +9,36 @@
 欢迎使用...  <br/>
 <a href="javascript:logout()">退出登录</a> <br/>
 <a href="javascript:getUserInfo()">获取用户信息</a>
+
+    <!--
+      /**
+         * 张琪用户 拥有以下资源
+         *
+         * 线索管理
+         * 线索管理
+         * 线索管理-列表
+         * 线索管理-录入
+         * 线索管理-编辑
+         * 线索管理-查看
+         * 系统管理-列表
+         * 线索管理-导入
+         */
+     -->
+    <a href="javascript:clueList()">线索列表</a>
+    <a href="javascript:clueDel()">线索删除</a>
 </body>
 
 <script type="text/javascript">
     function getUserInfo() {
-        axios.get('http://localhost:8080/welcome').then(function (response) {
-            // 处理成功情况
-            console.log(response);
-        })
-        .catch(function (error) {
-            // 处理错误情况
-            console.log(error);
-        })
-        .finally(function () {
-            // 总是会执行
+        let token = window.localStorage.getItem("token")
+        axios({
+            method: 'post',
+            url: 'http://localhost:8080/welcome',
+            responseType: 'json',
+            // 自定义请求头
+            headers: {'token': token},
+        }).then(function (response) {
+            console.log("登录后访问welcome接口返回结果：",response)
         });
     }
 
@@ -38,6 +54,32 @@
             .finally(function () {
                 // 总是会执行
             });
+    }
+
+    function clueList() {
+        let token = window.localStorage.getItem("token")
+        axios({
+            method: 'get',
+            url: 'http://localhost:8080/api/clue/list',
+            responseType: 'json',
+            // 自定义请求头
+            headers: {'token': token},
+        }).then(function (response) {
+            console.log("访问api/clue/list接口返回结果：",response)
+        });
+    }
+
+    function clueDel() {
+        let token = window.localStorage.getItem("token")
+        axios({
+            method: 'get',
+            url: 'http://localhost:8080/api/clue/del',
+            responseType: 'json',
+            // 自定义请求头
+            headers: {'token': token},
+        }).then(function (response) {
+            console.log("访问api/clue/del接口返回结果：",response)
+        });
     }
 </script>
 </html>

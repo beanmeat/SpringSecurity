@@ -1,12 +1,16 @@
 package com.beanmeat.security.service.impl;
 
+import com.beanmeat.security.entity.TPermission;
 import com.beanmeat.security.entity.TUser;
+import com.beanmeat.security.mapper.TPermissionMapper;
 import com.beanmeat.security.mapper.TUserMapper;
 import com.beanmeat.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * @author tchstart
@@ -17,6 +21,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private TUserMapper tUserMapper;
+
+    @Autowired
+    private TPermissionMapper tPermissionMapper;
 
 
     /**
@@ -33,6 +40,9 @@ public class UserServiceImpl implements UserService {
             throw new UsernameNotFoundException("登录账号不存在");
         }
 
+        // 查询该用户的权限列表
+        List<TPermission> tRoleList = tPermissionMapper.selectByUserId(tUser.getId());
+        tUser.setTPermissionList(tRoleList);
         return tUser;
     }
 }

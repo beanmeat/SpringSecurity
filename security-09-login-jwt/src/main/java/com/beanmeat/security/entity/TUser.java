@@ -3,9 +3,11 @@ package com.beanmeat.security.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -112,7 +114,12 @@ public class TUser implements UserDetails,Serializable {
     @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        Collection<GrantedAuthority> authorities = new ArrayList<>();
+        for (TPermission permission : this.tPermissionList) {
+            // 放入权限（权限标识符，权限code，权限代码）
+            authorities.add(new SimpleGrantedAuthority(permission.getCode()));
+        }
+        return authorities;
     }
 
     @Override

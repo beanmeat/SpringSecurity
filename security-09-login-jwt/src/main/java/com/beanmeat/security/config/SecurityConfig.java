@@ -1,9 +1,11 @@
 package com.beanmeat.security.config;
 
 import com.beanmeat.security.filter.CaptchaFilter;
+import com.beanmeat.security.filter.TokenFilter;
 import com.beanmeat.security.handler.AppLogoutSuccessHandler;
 import com.beanmeat.security.handler.MyAuthenticationFailureHandler;
 import com.beanmeat.security.handler.MyAuthenticationSuccessHandler;
+import org.apache.el.parser.Token;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,6 +32,9 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     @Autowired
+    private TokenFilter tokenFilter;
+
+    @Autowired
     private CaptchaFilter captchaFilter;
 
     @Autowired
@@ -38,6 +45,9 @@ public class SecurityConfig {
 
     @Autowired
     private AppLogoutSuccessHandler appLogoutSuccessHandler;
+
+    @Autowired
+    private AccessDeniedHandler accessDeniedHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -94,9 +104,15 @@ public class SecurityConfig {
                 .cors(cors -> { // 允许前端跨域访问
                     cors.configurationSource(configurationSource);
                 })
-
+                // 在登录Filter后面加入我们的token验证的Filter
+                .addFilterAfter(tokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement( sessionManagement ->
+                        // session创建策略（无session状态）
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .exceptionHandling(exceptionHanding -> {
+                    exceptionHanding.accessDeniedHandler(accessDeniedHandler); // 没有权限的时候，执行该handler
+                })
                 .build();
     }
 
